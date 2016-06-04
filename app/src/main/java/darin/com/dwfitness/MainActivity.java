@@ -1,12 +1,14 @@
 package darin.com.dwfitness;
 
 import android.app.Activity;
+import android.app.Fragment;
 import android.app.SearchManager;
 import android.content.Intent;
 import android.content.res.Configuration;
 import android.os.Bundle;
 
 import android.support.annotation.Nullable;
+import android.app.FragmentTransaction;
 import android.support.v4.view.MenuItemCompat;
 import android.support.v4.widget.DrawerLayout;
 import android.support.v7.app.ActionBar;
@@ -84,23 +86,46 @@ public class MainActivity extends ActionBarActivity {
 
         drawerLayout = (DrawerLayout) findViewById(R.id.drawer_layout);
 
+        drawerListView.setOnItemClickListener(new DrawerItemClickListener());
+
+        //if the mainAcitvy is newly created, use the selectItem method to
+        //display TopFragment
+//        if (savedInstanceState == null) {
+//            selectItem(0);
+//        }
+
 
         actionBarDrawerToggle = new ActionBarDrawerToggle(
                 this,
                 drawerLayout,
                 R.string.drawer_open,
                 R.string.drawer_close
-        );
+        ) {
 
+            @Override
+            public void onDrawerOpened(View drawerView) {
+                super.onDrawerOpened(drawerView);
+                invalidateOptionsMenu();
 
-        drawerListView.setOnItemClickListener( new DrawerItemClickListener());
+            }
+
+            @Override
+            public void onDrawerClosed(View drawerView) {
+                super.onDrawerClosed(drawerView);
+                invalidateOptionsMenu();
+            }
+        };
+
 
         drawerLayout.setDrawerListener(actionBarDrawerToggle);
 
         ActionBar actionBar = getSupportActionBar();
-        if(actionBar != null){
+        if (actionBar != null) {
             actionBar.setDisplayHomeAsUpEnabled(true);
+            actionBar.setHomeButtonEnabled(true);
         }
+
+
 //        mainDisplay = (ImageView) findViewById(R.id.my_main_images);
 //        ImageView dumbBellImage = (ImageView) findViewById(R.id.imageDumbbells);
 
@@ -142,7 +167,8 @@ public class MainActivity extends ActionBarActivity {
     @Override
     public boolean onOptionsItemSelected(MenuItem item) {
 
-        if(actionBarDrawerToggle.onOptionsItemSelected(item)){
+        //Handle the actionBarToggle to be clicked
+        if (actionBarDrawerToggle.onOptionsItemSelected(item)) {
             return true;
         }
 
@@ -186,7 +212,75 @@ public class MainActivity extends ActionBarActivity {
         actionBarDrawerToggle.onConfigurationChanged(newConfig);
     }
 
-    private class DrawerItemClickListener implements ListView.OnItemClickListener{
+    private void selectItem(int position) {
+
+        Fragment fragment;
+
+        switch (position) {
+            case 1:
+                fragment = new CardioFragment();
+                break;
+            case 2:
+                fragment = new UpperBodyFragment();
+                break;
+            case 3:
+                fragment = new LowerBodyFragment();
+                break;
+            default:
+                fragment = new TopFragment();
+        }
+
+        FragmentTransaction ft = getFragmentManager().beginTransaction();
+
+        //Insert fragment into layout
+        ft.replace(R.id.content_frame, fragment);
+
+        //use back button
+        ft.addToBackStack(null);
+
+        //Use fragment transaction to replace the fragment that's displayed
+        ft.setTransition(FragmentTransaction.TRANSIT_FRAGMENT_FADE);
+
+        ft.commit();
+
+        setActionBarTitle(position);
+
+        //Close the drawer
+        drawerLayout.closeDrawer(drawerListView);
+
+
+    }
+
+    public void setActionBarTitle(int position) {
+        String title;
+
+        if (position == 0) {
+            title = getResources().getString(R.string.app_name);
+        } else {
+            title = drawerListViewItems[position];
+        }
+
+//        getActionBar().setIcon(R.mipmap.ic_launcher);
+//        getActionBar().setTitle(title);
+
+
+    }
+
+    //Called whenever invalidateOptionsMenu
+    @Override
+    public boolean onPrepareOptionsMenu(Menu menu) {
+
+        // if the drawer is open hid action items related to the context view
+        boolean drawerOpen = drawerLayout.isDrawerOpen(drawerListView);
+
+        //Set the visiablity of setting and search to false if the drawer is open
+        //set to true if it is not
+        menu.findItem(R.id.action_settings).setVisible(!drawerOpen);
+        menu.findItem(R.id.menu_search).setVisible(!drawerOpen);
+        return super.onPrepareOptionsMenu(menu);
+    }
+
+    private class DrawerItemClickListener implements ListView.OnItemClickListener {
 
         @Override
         public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
@@ -194,8 +288,12 @@ public class MainActivity extends ActionBarActivity {
                     ((TextView) view).getText(),
                     Toast.LENGTH_LONG).show();
 
+            selectItem(position);
+
             drawerLayout.closeDrawer(drawerListView);
         }
     }
+
+
 }
 
